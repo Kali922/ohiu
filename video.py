@@ -14,16 +14,19 @@ aria2 = aria2p.API(
         secret=""
     )
 )
+
 async def download_video(url, reply_msg, user_mention, user_id):
-    response = requests.get(f"https://teraboxvideodownloader.nepcoderdevs.workers.dev/?url={url}")
+    # Make a request to the new API endpoint
+    response = requests.get(f"https://terabox.udayscriptsx.workers.dev/?url={url}")
     response.raise_for_status()
     data = response.json()
 
-    resolutions = data["response"][0]["resolutions"]
-    fast_download_link = resolutions["Fast Download"]
-    thumbnail_url = data["response"][0]["thumbnail"]
-    video_title = data["response"][0]["title"]
-
+    # Extract relevant data from the new response structure
+    video_title = data["file_name"]
+    fast_download_link = data["direct_link"]
+    thumbnail_url = data["thumb"]
+    
+    # Start downloading using aria2
     download = aria2.add_uris([fast_download_link])
     start_time = datetime.now()
 
@@ -54,6 +57,7 @@ async def download_video(url, reply_msg, user_mention, user_id):
     if download.is_complete:
         file_path = download.files[0].path
 
+        # Download and save thumbnail
         thumbnail_path = "thumbnail.jpg"
         thumbnail_response = requests.get(thumbnail_url)
         with open(thumbnail_path, "wb") as thumb_file:
@@ -64,6 +68,8 @@ async def download_video(url, reply_msg, user_mention, user_id):
         return file_path, thumbnail_path, video_title
     else:
         raise Exception("Download failed")
+
+
 
 async def upload_video(client, file_path, thumbnail_path, video_title, reply_msg, collection_channel_id, user_mention, user_id, message):
     file_size = os.path.getsize(file_path)
